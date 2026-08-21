@@ -16,3 +16,6 @@ uv.lock
 
 # The config repo this tool syncs, when cloned here.
 claude-config/
+
+# Process artifacts, never committed.
+planning.md
