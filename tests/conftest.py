@@ -1,6 +1,6 @@
 import pytest
 
-from claude_multirepo_sync import config, discover
+from claude_multirepo_sync import config, discover, git_sync
 
 
 @pytest.fixture(autouse=True)
@@ -12,6 +12,8 @@ def claude_home(tmp_path, monkeypatch):
     """
     home = tmp_path / "claude-home"
     home.mkdir()
+    monkeypatch.setattr(git_sync, "CLAUDE_HOME", home)
+    monkeypatch.setattr(git_sync, "MARKER", home / "multirepo-sync.conflict")
     monkeypatch.setattr(discover, "CLAUDE_HOME", home)
     monkeypatch.setattr(discover, "PENDING_MARKER", home / "multirepo-sync.pending")
     monkeypatch.setattr(config, "CLAUDE_HOME", home)
