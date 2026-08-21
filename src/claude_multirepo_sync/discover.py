@@ -5,6 +5,7 @@
 import hashlib
 import os
 import re
+import shutil
 import subprocess
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -106,6 +107,25 @@ def relink(target, central_file, backup_name, pending_list, prepare=None):
     return None
 
 
+def stash(staged, destination):
+    """Move a staged file under the backups directory, stamped with the time.
+
+    Falls back to leaving it beside the file it came from if the move fails:
+    these bytes exist nowhere else, so keeping them beats a tidy tree.
+    """
+    # Naive local time is fine here - it's just a filename suffix.
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")  # noqa: DTZ005
+    name = f"{destination.name}.conflict-{stamp}"
+    backup = destination.with_name(name)
+    try:
+        backup.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(staged), str(backup))
+    except OSError:
+        backup = staged.with_name(name)
+        staged.rename(backup)
+    return backup
+
+
 @dataclass
 class Changes:
     """What a pass did, and what it could not do.
@@ -121,7 +141,7 @@ class Changes:
     pending_conflict: list = field(default_factory=list)
 
 
-def sync_directory(local_root, central_dir, changes):
+def sync_directory(local_root, central_dir, backup_root, changes):
     if not central_dir.is_dir():
         return
 
@@ -183,14 +203,14 @@ def sync_directory(local_root, central_dir, changes):
                 print(f"Identical, linked: {target}")
             continue
 
-        # Real content that differs: back up, then try to link - the backup
-        # stays on success, for a manual merge if needed.
-        # Naive local time is fine here - it's just a filename suffix.
-        stamp = datetime.now().strftime("%Y%m%d-%H%M%S")  # noqa: DTZ005
-        backup = relink(
-            target, central_file, target.name + f".conflict-{stamp}", changes.pending_conflict
+        # Real content that differs: stage it aside, link, then move the staged
+        # copy out of the tree being mirrored - a project's working copy is not
+        # this tool's to litter, and the backup outlives the session anyway.
+        staged = relink(
+            target, central_file, target.name + ".discover-staging", changes.pending_conflict
         )
-        if backup:
+        if staged:
+            backup = stash(staged, backup_root / rel)
             changes.changed.append(str(target))
             print(
                 f"CONFLICT: {target} differed from central. Backup: {backup}. "
@@ -207,7 +227,7 @@ def main(repo, extra_search_roots=None):
         raise ValueError(f"search root(s) do not exist: {bad_roots}")
 
     global_central = repo / ".claude"
-    sync_directory(config.CLAUDE_HOME, global_central, changes)
+    sync_directory(config.CLAUDE_HOME, global_central, config.BACKUPS_DIR / ".claude", changes)
 
     projects_central = repo / "projects"
     if projects_central.is_dir():
@@ -231,7 +251,9 @@ def main(repo, extra_search_roots=None):
                     slug = get_slug(remote)
                     if slug not in central_slugs:
                         continue
-                    sync_directory(proj_dir, projects_central / slug, changes)
+                    sync_directory(
+                        proj_dir, projects_central / slug, config.BACKUPS_DIR / slug, changes
+                    )
 
     reports = (
         (

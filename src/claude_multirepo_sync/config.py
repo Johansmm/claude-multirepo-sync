@@ -16,6 +16,7 @@ CLAUDE_HOME = Path.home() / ".claude"
 # The pointer stays loose: it is what says where everything else is.
 REPO_FILE = CLAUDE_HOME / "multirepo-sync.repo"
 SYNC_DIR = CLAUDE_HOME / "multirepo-sync"
+BACKUPS_DIR = SYNC_DIR / "backups"
 CONFLICT_MARKER = SYNC_DIR / "conflict"
 PENDING_MARKER = SYNC_DIR / "pending"
 LOCK = SYNC_DIR / "lock"
