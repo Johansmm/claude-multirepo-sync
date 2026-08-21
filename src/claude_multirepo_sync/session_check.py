@@ -57,7 +57,7 @@ def report():
                     "This is likely a bug, not a normal conflict. See the traceback below.",
                 ],
             )
-            for marker in sorted(config.CLAUDE_HOME.glob(f"{config.ERROR_PREFIX}*"))
+            for marker in sorted(config.SYNC_DIR.glob(f"{config.ERROR_PREFIX}*"))
         ),
     ]
     return "\n\n".join(section for section in sections if section)

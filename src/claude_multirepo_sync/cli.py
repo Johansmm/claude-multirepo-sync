@@ -89,6 +89,7 @@ def run(args):
 
 def main():
     args = build_parser().parse_args()
+    config.ensure_sync_dir()
     crashed = config.error_marker(args.command)
 
     try:

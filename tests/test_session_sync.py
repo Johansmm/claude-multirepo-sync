@@ -1,7 +1,7 @@
 import pytest
 from filelock import Timeout
 
-from claude_multirepo_sync import discover, git_sync, session_sync
+from claude_multirepo_sync import config, discover, git_sync, session_sync
 from claude_multirepo_sync.errors import SyncError
 
 
@@ -48,10 +48,10 @@ def test_stays_silent_when_everything_is_clean(repo, monkeypatch):
     assert ran == ["git-sync", "discover"]
 
 
-def test_discover_still_runs_when_the_sync_fails(claude_home, repo, monkeypatch):
+def test_discover_still_runs_when_the_sync_fails(repo, monkeypatch):
     # The reason failures propagate instead of exiting: an exit here would have
     # killed the process before discover ever ran.
-    marker = claude_home / "multirepo-sync.conflict"
+    marker = config.CONFLICT_MARKER
     ran = steps_that_record(
         monkeypatch, git_sync_fails_with=SyncError("CONFLICT in git pull", marker=marker)
     )

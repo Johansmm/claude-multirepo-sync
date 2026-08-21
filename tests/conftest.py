@@ -12,9 +12,12 @@ def claude_home(tmp_path, monkeypatch):
     """
     home = tmp_path / "claude-home"
     home.mkdir()
+    sync_dir = home / "multirepo-sync"
     monkeypatch.setattr(config, "CLAUDE_HOME", home)
     monkeypatch.setattr(config, "REPO_FILE", home / "multirepo-sync.repo")
-    monkeypatch.setattr(config, "CONFLICT_MARKER", home / "multirepo-sync.conflict")
-    monkeypatch.setattr(config, "PENDING_MARKER", home / "multirepo-sync.pending")
-    monkeypatch.setattr(config, "LOCK", home / "multirepo-sync.lock")
+    monkeypatch.setattr(config, "SYNC_DIR", sync_dir)
+    monkeypatch.setattr(config, "CONFLICT_MARKER", sync_dir / "conflict")
+    monkeypatch.setattr(config, "PENDING_MARKER", sync_dir / "pending")
+    monkeypatch.setattr(config, "LOCK", sync_dir / "lock")
+    config.ensure_sync_dir()
     return home

@@ -13,11 +13,22 @@ owning them is what keeps a test from ever writing into a real ~/.claude.
 from pathlib import Path
 
 CLAUDE_HOME = Path.home() / ".claude"
+# The pointer stays loose: it is what says where everything else is.
 REPO_FILE = CLAUDE_HOME / "multirepo-sync.repo"
-CONFLICT_MARKER = CLAUDE_HOME / "multirepo-sync.conflict"
-PENDING_MARKER = CLAUDE_HOME / "multirepo-sync.pending"
-LOCK = CLAUDE_HOME / "multirepo-sync.lock"
-ERROR_PREFIX = "multirepo-sync.error."
+SYNC_DIR = CLAUDE_HOME / "multirepo-sync"
+CONFLICT_MARKER = SYNC_DIR / "conflict"
+PENDING_MARKER = SYNC_DIR / "pending"
+LOCK = SYNC_DIR / "lock"
+ERROR_PREFIX = "error."
+
+
+def ensure_sync_dir():
+    """Create the directory before anything tries to write in it.
+
+    Called once on the way in rather than at each write site: the lock is taken
+    by filelock, which fails outright on a missing parent.
+    """
+    SYNC_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def error_marker(command):
@@ -26,7 +37,7 @@ def error_marker(command):
     One per command: a shared marker meant the next command to pass wiped a
     crash nobody had seen yet.
     """
-    return CLAUDE_HOME / f"{ERROR_PREFIX}{command}"
+    return SYNC_DIR / f"{ERROR_PREFIX}{command}"
 
 
 def is_repo(path):
