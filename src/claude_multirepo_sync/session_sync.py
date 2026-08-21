@@ -1,14 +1,10 @@
 """Runs the whole sync in one process, then reports once."""
 
-from pathlib import Path
-
 from filelock import FileLock, Timeout
 
-from claude_multirepo_sync import discover, git_sync, session_check
+from claude_multirepo_sync import config, discover, git_sync, session_check
 from claude_multirepo_sync.errors import SyncError
 
-CLAUDE_HOME = Path.home() / ".claude"
-LOCK = CLAUDE_HOME / "multirepo-sync.lock"
 LOCK_TIMEOUT_SECONDS = 120
 
 
@@ -37,12 +33,12 @@ def main(repo, extra_search_roots=None):
         # Waiting, not skipping: the holder is doing the same work, and if it is
         # the SessionEnd process of the last session, walking away would leave
         # its markers unreported for a whole session.
-        with FileLock(LOCK, timeout=LOCK_TIMEOUT_SECONDS):
+        with FileLock(config.LOCK, timeout=LOCK_TIMEOUT_SECONDS):
             changed = run_steps(repo, extra_search_roots)
     except Timeout:
         notes.append(
             "## NOTICE: the config sync was skipped\n\n"
-            f"Another sync held {LOCK} for over {LOCK_TIMEOUT_SECONDS}s, so this "
+            f"Another sync held {config.LOCK} for over {LOCK_TIMEOUT_SECONDS}s, so this "
             "one gave up. Check for a stuck process."
         )
 

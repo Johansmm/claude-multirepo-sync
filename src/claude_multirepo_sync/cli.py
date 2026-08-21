@@ -89,7 +89,7 @@ def run(args):
 
 def main():
     args = build_parser().parse_args()
-    crashed = session_check.error_marker(args.command)
+    crashed = config.error_marker(args.command)
 
     try:
         report = run(args)

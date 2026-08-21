@@ -1,15 +1,32 @@
-"""Pointer to the config repo.
+"""Where this tool keeps its own files on this machine.
 
-Kept in the user's own config rather than baked into the package at install
-time: an installed wheel is meant to be relocatable, and a path compiled into
-one would be silently lost on the next reinstall - which is exactly what a
-dependency change forces.
+The pointer to the config repo is kept in the user's own config rather than
+baked into the package at install time: an installed wheel is meant to be
+relocatable, and a path compiled into one would be silently lost on the next
+reinstall - which is exactly what a dependency change forces.
+
+Every other path is gathered here for the same reason it matters at all: they
+are the only things this tool writes outside the config repo, and one module
+owning them is what keeps a test from ever writing into a real ~/.claude.
 """
 
 from pathlib import Path
 
 CLAUDE_HOME = Path.home() / ".claude"
 REPO_FILE = CLAUDE_HOME / "multirepo-sync.repo"
+CONFLICT_MARKER = CLAUDE_HOME / "multirepo-sync.conflict"
+PENDING_MARKER = CLAUDE_HOME / "multirepo-sync.pending"
+LOCK = CLAUDE_HOME / "multirepo-sync.lock"
+ERROR_PREFIX = "multirepo-sync.error."
+
+
+def error_marker(command):
+    """Where a crash in this command is recorded.
+
+    One per command: a shared marker meant the next command to pass wiped a
+    crash nobody had seen yet.
+    """
+    return CLAUDE_HOME / f"{ERROR_PREFIX}{command}"
 
 
 def is_repo(path):

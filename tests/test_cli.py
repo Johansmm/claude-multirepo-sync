@@ -2,7 +2,7 @@ import sys
 
 import pytest
 
-from claude_multirepo_sync import cli, session_check
+from claude_multirepo_sync import cli, config, session_check
 
 
 def invoke(monkeypatch, command, behaviour):
@@ -19,12 +19,12 @@ def test_a_crash_is_recorded_under_its_own_command(monkeypatch):
     with pytest.raises(RuntimeError):
         cli.main()
 
-    assert "kaboom" in session_check.error_marker("discover").read_text(encoding="utf-8")
+    assert "kaboom" in config.error_marker("discover").read_text(encoding="utf-8")
 
 
 def test_a_passing_command_leaves_another_ones_crash_alone(monkeypatch):
     # A shared marker meant the next command to pass wiped a crash nobody had seen.
-    stale = session_check.error_marker("git-sync")
+    stale = config.error_marker("git-sync")
     stale.write_text("crashed last time\n", encoding="utf-8")
     invoke(monkeypatch, "check", lambda args: "")
 
@@ -35,7 +35,7 @@ def test_a_passing_command_leaves_another_ones_crash_alone(monkeypatch):
 
 def test_a_crash_is_reported_before_it_is_cleared(monkeypatch):
     # Cleared because this run worked, not because someone looked at it.
-    crashed = session_check.error_marker("session-sync")
+    crashed = config.error_marker("session-sync")
     crashed.write_text("crashed last time\n", encoding="utf-8")
     invoke(monkeypatch, "session-sync", lambda args: session_check.report())
 
@@ -53,4 +53,4 @@ def test_a_bad_repo_path_is_not_treated_as_a_crash(tmp_path, monkeypatch):
     with pytest.raises(SystemExit):
         cli.main()
 
-    assert not session_check.error_marker("set-repo").exists()
+    assert not config.error_marker("set-repo").exists()

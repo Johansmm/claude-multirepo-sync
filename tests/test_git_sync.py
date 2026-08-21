@@ -3,7 +3,7 @@ import subprocess
 
 import pytest
 
-from claude_multirepo_sync import git_sync
+from claude_multirepo_sync import config, git_sync
 from claude_multirepo_sync.errors import SyncError
 
 
@@ -101,7 +101,7 @@ def test_commit_refuses_a_half_merged_tree(repo, tmp_path):
 
     with pytest.raises(SyncError) as excinfo:
         git_sync.commit_local(repo)
-    assert excinfo.value.marker == git_sync.MARKER
+    assert excinfo.value.marker == config.CONFLICT_MARKER
     assert "<<<<<<<" not in run_git(repo, "show", "HEAD:.claude/CLAUDE.md").stdout
 
 
@@ -112,7 +112,7 @@ def test_sync_reconciles_without_a_pull_strategy_configured(repo, tmp_path):
 
     git_sync.main(repo)
 
-    assert not git_sync.MARKER.exists()
+    assert not config.CONFLICT_MARKER.exists()
     assert (repo / ".claude" / "from-elsewhere.md").exists()
     pushed = run_git(repo, "show", "--name-only", "--format=", "origin/main~1").stdout
     assert ".claude/CLAUDE.md" in pushed
@@ -145,5 +145,5 @@ def test_first_push_is_not_treated_as_a_conflict(repo, tmp_path):
 
     git_sync.main(repo)
 
-    assert not git_sync.MARKER.exists()
+    assert not config.CONFLICT_MARKER.exists()
     assert run_git(repo, "ls-remote", str(empty), "main").stdout.strip()

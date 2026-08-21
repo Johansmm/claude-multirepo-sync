@@ -2,12 +2,9 @@
 
 import platform
 import subprocess
-from pathlib import Path
 
+from claude_multirepo_sync import config
 from claude_multirepo_sync.errors import SyncError
-
-CLAUDE_HOME = Path.home() / ".claude"
-MARKER = CLAUDE_HOME / "multirepo-sync.conflict"
 
 
 def run_git(repo, *args):
@@ -40,14 +37,14 @@ def commit_local(repo):
         raise SyncError(
             "CONFLICT left by an earlier pull",
             f"Resolve it by hand: cd {repo}; git status",
-            marker=MARKER,
+            marker=config.CONFLICT_MARKER,
         )
 
     code, out, err = run_git(repo, "add", "-A")
     if code != 0:
         # Unchecked, this fails silently: nothing gets staged, the check below
         # finds nothing, and the config never syncs again.
-        raise SyncError("ERROR staging config repo changes", out, err, marker=MARKER)
+        raise SyncError("ERROR staging config repo changes", out, err, marker=config.CONFLICT_MARKER)
 
     # The add re-stages the working tree, so the index asks what the commit will answer.
     code, _, _ = run_git(repo, "diff", "--cached", "--quiet")
@@ -56,7 +53,7 @@ def commit_local(repo):
 
     code, out, err = run_git(repo, "commit", "-m", f"auto: {platform.node()}", "-q")
     if code != 0:
-        raise SyncError("ERROR committing config repo changes", out, err, marker=MARKER)
+        raise SyncError("ERROR committing config repo changes", out, err, marker=config.CONFLICT_MARKER)
 
 
 def has_unpushed_commits(repo):
@@ -71,7 +68,7 @@ def has_unpushed_commits(repo):
 
     code, out, err = run_git(repo, "rev-list", "--count", "origin/main..HEAD")
     if code != 0:
-        raise SyncError("ERROR counting the commits ahead of origin/main", err, marker=MARKER)
+        raise SyncError("ERROR counting the commits ahead of origin/main", err, marker=config.CONFLICT_MARKER)
     return out.strip() != "0"
 
 
@@ -90,15 +87,15 @@ def main(repo):
             err,
             status_out,
             f"Resolve it by hand: cd {repo}; git status",
-            marker=MARKER,
+            marker=config.CONFLICT_MARKER,
         )
 
-    if MARKER.exists():
-        MARKER.unlink()
+    if config.CONFLICT_MARKER.exists():
+        config.CONFLICT_MARKER.unlink()
 
     if has_unpushed_commits(repo):
         code, out, err = run_git(repo, "push", "origin", "main")
         if code != 0:
             raise SyncError(
-                "ERROR in git push (someone probably pushed first)", out, err, marker=MARKER
+                "ERROR in git push (someone probably pushed first)", out, err, marker=config.CONFLICT_MARKER
             )

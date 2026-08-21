@@ -10,10 +10,10 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
+from claude_multirepo_sync import config
+
 DEFAULT_SEARCH_ROOTS = [Path.home()]
 MAX_DEPTH = 4
-CLAUDE_HOME = Path.home() / ".claude"
-PENDING_MARKER = CLAUDE_HOME / "multirepo-sync.pending"
 
 
 def get_slug(remote_url):
@@ -207,7 +207,7 @@ def main(repo, extra_search_roots=None):
         raise ValueError(f"search root(s) do not exist: {bad_roots}")
 
     global_central = repo / ".claude"
-    sync_directory(CLAUDE_HOME, global_central, changes)
+    sync_directory(config.CLAUDE_HOME, global_central, changes)
 
     projects_central = repo / "projects"
     if projects_central.is_dir():
@@ -248,10 +248,10 @@ def main(repo, extra_search_roots=None):
             lines += [f"  - {p}" for p in paths]
 
     if lines:
-        PENDING_MARKER.write_text("\n".join(lines) + "\n", encoding="utf-8")
-        print(f"Unresolved pending items, see {PENDING_MARKER}")
+        config.PENDING_MARKER.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        print(f"Unresolved pending items, see {config.PENDING_MARKER}")
     else:
-        PENDING_MARKER.unlink(missing_ok=True)
+        config.PENDING_MARKER.unlink(missing_ok=True)
 
     print("Discovery complete.")
     return changes.changed

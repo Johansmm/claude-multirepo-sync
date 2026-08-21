@@ -2,22 +2,9 @@
 of which machine you're on.
 """
 
-from pathlib import Path
+from claude_multirepo_sync import config
 
-CLAUDE_HOME = Path.home() / ".claude"
-CONFLICT_MARKER = CLAUDE_HOME / "multirepo-sync.conflict"
-PENDING_MARKER = CLAUDE_HOME / "multirepo-sync.pending"
-ERROR_PREFIX = "multirepo-sync.error."
 FENCE = "```"
-
-
-def error_marker(command):
-    """Where a crash in this command is recorded.
-
-    One per command: a shared marker meant the next command to pass wiped a
-    crash nobody had seen yet.
-    """
-    return CLAUDE_HOME / f"{ERROR_PREFIX}{command}"
 
 
 def show(marker, title, body_lines):
@@ -44,7 +31,7 @@ def report():
     """
     sections = [
         show(
-            CONFLICT_MARKER,
+            config.CONFLICT_MARKER,
             "WARNING: the config repo has an unresolved git conflict",
             [
                 "It happened in a previous session or machine and was never resolved.",
@@ -53,7 +40,7 @@ def report():
             ],
         ),
         show(
-            PENDING_MARKER,
+            config.PENDING_MARKER,
             "NOTICE: there are config files not yet linked on this machine",
             [
                 "They couldn't be created due to missing privilege (symlink). This doesn't",
@@ -64,13 +51,13 @@ def report():
         *(
             show(
                 marker,
-                f"WARNING: 'claude-mr-sync {marker.name[len(ERROR_PREFIX) :]}' "
+                f"WARNING: 'claude-mr-sync {marker.name[len(config.ERROR_PREFIX) :]}' "
                 "hit an unexpected error",
                 [
                     "This is likely a bug, not a normal conflict. See the traceback below.",
                 ],
             )
-            for marker in sorted(CLAUDE_HOME.glob(f"{ERROR_PREFIX}*"))
+            for marker in sorted(config.CLAUDE_HOME.glob(f"{config.ERROR_PREFIX}*"))
         ),
     ]
     return "\n\n".join(section for section in sections if section)
