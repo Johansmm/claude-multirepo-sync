@@ -15,9 +15,9 @@ versioned file directly.
 - `git-sync` keeps the config repo itself up to date (commit/pull/push).
 - `session-sync` is what the hooks actually run: it takes a lock, does the `git-sync` then the
   `discover`, and reports once at the end.
-- `check` surfaces anything left unresolved (a git conflict, a file that couldn't be linked, or
-  an unexpected error). Run it by hand whenever you want the current state; `session-sync` reports
-  the same thing on its own.
+- `check` surfaces anything left unresolved (a git conflict, a file that couldn't be linked, a
+  conflict backup you haven't merged yet, or an unexpected error). Run it by hand whenever you
+  want the current state; `session-sync` reports the same thing on its own.
 
 ## The config repo
 
@@ -141,6 +141,39 @@ cannot live there. `~/.claude/settings.json` is the main one: it holds that mach
 whatever absolute paths its tools live at, so it stays local and unsynced - the hook block in
 step 5 is added by hand, once per machine.
 
+## Where the tool keeps its own files
+
+Everything this tool writes on a machine lives under one directory, and none of it is synced:
+
+```
+~/.claude/
+├── multirepo-sync.repo          # where the config repo is, on this machine
+└── multirepo-sync/
+    ├── conflict                 # a git conflict in the config repo
+    ├── pending                  # links that couldn't be created
+    ├── error.<command>          # one per command that crashed
+    ├── lock                     # session-sync's lock
+    └── backups/                 # your side of a resolved conflict
+```
+
+The pointer sits outside the directory because it is what says where everything else lives.
+
+### Conflict backups
+
+The first time `discover` runs on a machine that already had its own `CLAUDE.md`, the local file
+and the central one are both real content with no history in common - git would have nothing to
+merge, and neither has this tool. So it links the central copy and keeps yours under `backups/`,
+at the path it came from: `backups/.claude/CLAUDE.md.conflict-<stamp>` for a global file,
+`backups/<slug>/CLAUDE.local.md.conflict-<stamp>` for a project one.
+
+They go there rather than beside the file they came from so that a project's working copy never
+grows an untracked file it didn't ask for.
+
+`check` reads that directory and keeps naming what is in it - the file it came from, what is
+linked in its place, and where the backup is - until you deal with it. Merge whatever is worth
+keeping into the linked file (editing it writes straight into the config repo), then delete the
+backup. Deleting it is what clears the notice.
+
 ## Working on the tool
 
 The installed copy is built from a git clone of its own, so it does not follow a working tree.
@@ -157,5 +190,5 @@ and reinstall when the installed copy should catch up.
 
 Creating real symlinks on Windows needs either Developer Mode enabled or an elevated shell (no
 such restriction on Linux/macOS). Without it, `discover` still runs safely - it leaves a
-`multirepo-sync.pending` marker instead of failing, and the next session's `session-sync` reports
+`multirepo-sync/pending` marker instead of failing, and the next session's `session-sync` reports
 it - or `claude-mr-sync check` does, whenever you ask.
