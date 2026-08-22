@@ -54,7 +54,7 @@ body:
       label: Version
       description: >
         The line from `uv tool list`, or the commit you are running from if this is a working tree.
-      placeholder: claude-multirepo-sync v0.1.0
+      placeholder: claude-multirepo-sync v1.0.0
     validations:
       required: true
 

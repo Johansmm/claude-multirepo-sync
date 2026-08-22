@@ -6,7 +6,9 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
-First release. Everything below is what `0.1.0` will ship with.
+## [1.0.0] - 2026-08-22
+
+First release.
 
 ### Added
 
@@ -29,3 +31,5 @@ First release. Everything below is what `0.1.0` will ship with.
 - `--search-root`, limiting the scan for opted-in projects to given roots instead of `$HOME`.
 - Graceful behaviour where Windows denies the symlink privilege: `discover` records what it could
   not link instead of failing.
+
+[1.0.0]: https://github.com/Johansmm/claude-multirepo-sync/releases/tag/v1.0.0
