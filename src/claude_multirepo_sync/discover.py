@@ -274,4 +274,3 @@ def main(repo, extra_search_roots=None):
 
     print("Discovery complete.")
     return changes.changed
-

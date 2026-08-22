@@ -64,7 +64,9 @@ def contents(root):
         ),
     ],
 )
-def test_a_file_lands_where_its_own_location_says(config_repo, claude_home, tmp_path, place, rel, expected):
+def test_a_file_lands_where_its_own_location_says(
+    config_repo, claude_home, tmp_path, place, rel, expected
+):
     # Every destination but the first needs directories the repo does not have yet.
     local = place(config_repo, claude_home, tmp_path, rel)
 

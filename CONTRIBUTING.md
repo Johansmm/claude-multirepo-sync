@@ -71,6 +71,15 @@ Two things about the suite are worth knowing before adding to it:
   Windows is not necessarily a full run. Keep the assertions that don't need a real link outside
   the marked test.
 
+## Linting
+
+```
+uv run ruff format --check .    # fails if a file needs reformatting
+uv run ruff check .             # fails on lint errors
+```
+
+Both run on every pull request. `uv run ruff format .` applies the formatting fixes in place.
+
 ## Code
 
 One module per command (`discover.py`, `link.py`, `git_sync.py`, ...), with `config.py` owning
