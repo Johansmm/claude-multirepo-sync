@@ -1,0 +1,53 @@
+name: Feature request
+description: Something the tool should be able to do
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The contract this tool keeps is deliberately small - two directory names, seven commands,
+        no manifest. Proposals that keep it that size are the easiest to accept.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What you were trying to do
+      description: The situation that made you want this, not the feature itself.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What the tool should do
+      description: The behaviour you want, and the command it would belong to.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part
+      options:
+        - discover
+        - link
+        - unlink
+        - git-sync
+        - session-sync
+        - check
+        - set-repo
+        - hooks / automation
+        - documentation
+        - something else
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you tried instead
+      description: >
+        How you work around it today, and why that isn't enough. If an existing command nearly
+        does it, say which.
+    validations:
+      required: false

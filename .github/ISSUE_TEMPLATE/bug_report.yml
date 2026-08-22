@@ -1,0 +1,69 @@
+name: Bug report
+description: Something the tool did that it shouldn't, or didn't do that it should
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before pasting any output: it names paths inside your config repo, and a marker can quote
+        git's own message. Read it through and redact anything private.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: The command you ran and what it did, output included.
+      placeholder: |
+        $ claude-mr-sync discover
+        ...
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected instead
+    validations:
+      required: true
+
+  - type: textarea
+    id: check
+    attributes:
+      label: Output of `claude-mr-sync check`
+      description: Where the tool records what it could not finish. Say so if it printed nothing.
+      render: text
+    validations:
+      required: false
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: >
+        The line from `uv tool list`, or the commit you are running from if this is a working tree.
+      placeholder: claude-multirepo-sync v0.1.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: layout
+    attributes:
+      label: Relevant layout
+      description: >
+        Only if it matters to the bug: which of `.claude/` and `projects/<slug>/` are involved,
+        whether the file was already linked, whether the hooks or a manual run triggered it.
+    validations:
+      required: false
