@@ -13,6 +13,7 @@ __pycache__
 .ruff_cache/
 .pytest_cache/
 uv.lock
+dist/
 
 # The config repo this tool syncs, when cloned here.
 claude-config/

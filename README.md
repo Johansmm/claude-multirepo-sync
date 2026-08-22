@@ -29,17 +29,21 @@ Every command takes `--help`.
 
 1. Install [`uv`](https://docs.astral.sh/uv/) if it's not already on the machine.
 
-2. Install the CLI. `uv` clones and builds it for you, so this machine never needs a working copy
-   of the tool:
+2. Install the CLI:
 
    ```
-   uv tool install git+https://github.com/Johansmm/claude-multirepo-sync.git
+   uv tool install claude-multirepo-sync
    ```
 
    The installed command is `claude-mr-sync`; `claude-multirepo-sync` is the package name, which
    is what `uv tool list` and `uv tool uninstall` want.
 
-   Re-run it with `--reinstall` to pick up a newer version.
+   Re-run it with `--reinstall` to pick up a newer release. To track `main` instead, install from
+   git explicitly:
+
+   ```
+   uv tool install --reinstall git+https://github.com/Johansmm/claude-multirepo-sync.git@main
+   ```
 
 3. Create the [config repo](#the-config-repo), if you don't have one yet. An empty private
    git repo is enough and only one repo is needed for all your machines.
