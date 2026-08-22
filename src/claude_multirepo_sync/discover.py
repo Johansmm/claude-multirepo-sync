@@ -126,16 +126,13 @@ def file_hash(path):
     return h.hexdigest()
 
 
-def relink(target, central_file, backup_name, pending_list, prepare=None):
-    """Rename target aside, optionally prepare() the central file from it,
-    then try to link. Roll back the rename if the link can't be created, so
-    nothing is ever left half-done. Returns the backup path on success (so
-    the caller can decide whether to keep or discard it), else None.
+def relink(target, central_file, backup_name, pending_list):
+    """Rename target aside, then try to link. Roll back the rename if the link
+    can't be created, so nothing is ever left half-done. Returns the backup
+    path on success (so the caller can keep or discard it), else None.
     """
     backup = target.with_name(backup_name)
     target.rename(backup)
-    if prepare:
-        prepare(backup)
     if new_central_link(target, central_file):
         return backup
     backup.rename(target)
@@ -167,8 +164,8 @@ class Changes:
     """What a pass did, and what it could not do.
 
     "changed" is only content that differs on disk now: a new link or a
-    replaced conflict. Adopting a file or linking an identical one leaves the
-    local bytes alone, so a session holding them is still up to date.
+    replaced conflict. Linking an identical file leaves the local bytes alone,
+    so a session holding them is still up to date.
     """
 
     changed: list = field(default_factory=list)
@@ -214,20 +211,6 @@ def sync_directory(local_root, central_dir, backup_root, changes):
                 print(f"Linked (new): {target} -> {central_file}")
             else:
                 changes.pending_new.append(str(target))
-            continue
-
-        if central_file.stat().st_size == 0:
-            # Adopt: local has real content, central is still an empty placeholder.
-            backup = relink(
-                target,
-                central_file,
-                target.name + ".discover-staging",
-                changes.pending_new,
-                prepare=lambda staged, cf=central_file: cf.write_bytes(staged.read_bytes()),
-            )
-            if backup:
-                backup.unlink()
-                print(f"Adopted: {target} -> {central_file}")
             continue
 
         if file_hash(target) == file_hash(central_file):

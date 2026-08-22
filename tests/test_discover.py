@@ -23,7 +23,7 @@ def dirs(tmp_path, monkeypatch):
         pytest.param(None, "central rules\n", True, id="new-link"),
         pytest.param("mine\n", "theirs\n", True, id="conflict-replaced"),
         pytest.param("same\n", "same\n", False, id="identical"),
-        pytest.param("mine\n", "", False, id="adopted"),
+        pytest.param("mine\n", "", True, id="empty-central"),
     ],
 )
 def test_only_real_content_changes_are_reported(dirs, local_content, central_content, reported):
