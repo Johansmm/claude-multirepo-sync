@@ -1,4 +1,5 @@
 import sys
+from importlib.metadata import version as pkg_version
 
 import pytest
 
@@ -54,3 +55,11 @@ def test_a_bad_repo_path_is_not_treated_as_a_crash(tmp_path, monkeypatch):
         cli.main()
 
     assert not config.error_marker("set-repo").exists()
+
+
+def test_version_flag_reports_the_installed_package_version(capsys):
+    with pytest.raises(SystemExit) as excinfo:
+        cli.build_parser().parse_args(["--version"])
+
+    assert excinfo.value.code == 0
+    assert pkg_version("claude-multirepo-sync") in capsys.readouterr().out

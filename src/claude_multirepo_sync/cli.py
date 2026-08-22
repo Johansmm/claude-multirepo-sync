@@ -3,6 +3,7 @@
 import argparse
 import sys
 import traceback
+from importlib.metadata import version
 from pathlib import Path
 
 from claude_multirepo_sync import (
@@ -33,6 +34,9 @@ WAKE_EXIT_CODE = 2
 def build_parser():
     parser = argparse.ArgumentParser(
         prog="claude-mr-sync", description="Sync Claude Code configuration from a git repo you own."
+    )
+    parser.add_argument(
+        "--version", action="version", version=f"%(prog)s {version('claude-multirepo-sync')}"
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
