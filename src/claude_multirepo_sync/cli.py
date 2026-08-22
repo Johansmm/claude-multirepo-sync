@@ -5,7 +5,14 @@ import sys
 import traceback
 from pathlib import Path
 
-from claude_multirepo_sync import config, discover, git_sync, session_check, session_sync
+from claude_multirepo_sync import (
+    config,
+    discover,
+    git_sync,
+    session_check,
+    session_sync,
+    unlink,
+)
 from claude_multirepo_sync.errors import SyncError
 
 DESCRIPTIONS = {
@@ -14,6 +21,7 @@ DESCRIPTIONS = {
     "check": "Show anything left unresolved: a stalled sync, pending links, backups.",
     "session-sync": "Sync the repo and mirror it onto this machine, then report once.",
     "set-repo": "Record where the config repo lives on this machine.",
+    "unlink": "Replace links with real files, so the config repo can be moved.",
 }
 
 # Wakes a live Claude Code session when the hook runs with asyncRewake.
@@ -26,17 +34,24 @@ def build_parser():
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    for name in ("discover", "session-sync"):
-        scanner = subparsers.add_parser(
+    scanners = {}
+    for name in ("discover", "session-sync", "unlink"):
+        scanners[name] = subparsers.add_parser(
             name, help=DESCRIPTIONS[name], description=DESCRIPTIONS[name]
         )
-        scanner.add_argument(
+        scanners[name].add_argument(
             "--search-root",
             action="append",
             type=Path,
             dest="search_roots",
             help="Root to scan for git repos (repeatable). Defaults to $HOME.",
         )
+    scanners["unlink"].add_argument(
+        "paths",
+        nargs="*",
+        type=Path,
+        help="Only these files. Defaults to every file this tool has linked.",
+    )
     subparsers.add_parser(
         "git-sync", help=DESCRIPTIONS["git-sync"], description=DESCRIPTIONS["git-sync"]
     )
@@ -83,6 +98,8 @@ def run(args):
         discover.main(repo, extra_search_roots=args.search_roots)
     elif args.command == "git-sync":
         git_sync.main(repo)
+    elif args.command == "unlink":
+        unlink.main(repo, args.paths, extra_search_roots=args.search_roots)
     elif args.command == "session-sync":
         return session_sync.main(repo, extra_search_roots=args.search_roots)
     return ""
