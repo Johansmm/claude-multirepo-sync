@@ -18,6 +18,8 @@ versioned file directly.
 - `check` surfaces anything left unresolved (a sync that didn't finish, a file that couldn't be
   linked, a conflict backup you haven't merged yet, or an unexpected error). Run it by hand whenever you
   want the current state; `session-sync` reports the same thing on its own.
+- `unlink` turns the links back into real files, so the config repo can be moved or replaced
+  without the machine losing its rules.
 
 ## The config repo
 
@@ -193,6 +195,37 @@ grows an untracked file it didn't ask for.
 linked in its place, and where the backup is - until you deal with it. Merge whatever is worth
 keeping into the linked file (editing it writes straight into the config repo), then delete the
 backup. Deleting it is what clears the notice.
+
+## Moving or replacing the config repo
+
+The local files are links, not copies, so deleting or moving the repo leaves every one of them
+pointing at nothing. The tool will not repair that on its own either: once the recorded path stops
+being a repository, `discover` refuses to run at all.
+
+`unlink` is what makes it safe. It replaces each link with a real copy of what it points at, so the
+machine keeps its rules whatever happens to the repo next:
+
+```
+claude-mr-sync unlink                      # every file this tool has linked
+claude-mr-sync unlink ~/.claude/CLAUDE.md  # or only some of them
+```
+
+Then move, re-clone or delete the repo, say where it ended up, and link everything back:
+
+```
+claude-mr-sync set-repo /new/path/to/config-repo
+claude-mr-sync discover
+```
+
+`discover` finds each copy identical to its central file and links it again without a backup, so
+the round trip leaves nothing behind. Don't dawdle between the two, though: a session starting in
+the middle runs `discover` and links the files straight back to the old path.
+
+It only ever undoes its own work. A link pointing outside the config repo is left alone, and so is
+one whose target is already gone - there would be nothing to copy into its place.
+
+If the repo is already deleted, there is nothing left to copy from: clone it again to the same
+path and the links resolve on their own.
 
 ## Working on the tool
 
