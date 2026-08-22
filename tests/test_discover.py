@@ -1,21 +1,7 @@
-import tempfile
-from pathlib import Path
-
 import pytest
+from conftest import needs_symlinks
 
 from claude_multirepo_sync import discover
-
-
-def symlinks_available():
-    with tempfile.TemporaryDirectory() as tmp:
-        try:
-            Path(tmp, "link").symlink_to(Path(tmp, "target"))
-        except OSError:
-            return False
-    return True
-
-
-SYMLINKS_AVAILABLE = symlinks_available()
 
 
 @pytest.fixture
@@ -61,7 +47,7 @@ def dangling_link(local):
     return link
 
 
-@pytest.mark.skipif(not SYMLINKS_AVAILABLE, reason="creating a symlink needs a Windows privilege")
+@needs_symlinks
 def test_a_link_pointing_elsewhere_is_repointed(dirs):
     central, local, backups = dirs
     (central / "CLAUDE.md").write_text("central rules\n", encoding="utf-8")
@@ -77,7 +63,7 @@ def test_a_link_pointing_elsewhere_is_repointed(dirs):
     assert not list(local.glob("*.discover-staging"))
 
 
-@pytest.mark.skipif(not SYMLINKS_AVAILABLE, reason="creating a symlink needs a Windows privilege")
+@needs_symlinks
 def test_a_link_that_cannot_be_repointed_is_left_alone(dirs, monkeypatch):
     monkeypatch.setattr(discover, "new_central_link", lambda target, central_file: False)
     central, local, backups = dirs

@@ -1,3 +1,6 @@
+import tempfile
+from pathlib import Path
+
 import pytest
 
 from claude_multirepo_sync import config
@@ -22,3 +25,18 @@ def claude_home(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "LOCK", sync_dir / "lock")
     config.ensure_sync_dir()
     return home
+
+
+def symlinks_available():
+    with tempfile.TemporaryDirectory() as tmp:
+        try:
+            Path(tmp, "link").symlink_to(Path(tmp, "target"))
+        except OSError:
+            return False
+    return True
+
+
+# Shared so a test can say what it needs instead of repeating the reason.
+needs_symlinks = pytest.mark.skipif(
+    not symlinks_available(), reason="creating a symlink needs a Windows privilege"
+)
