@@ -1,5 +1,5 @@
 import pytest
-from conftest import needs_symlinks
+from helpers import needs_symlinks, write
 
 from claude_multirepo_sync import discover
 
@@ -30,9 +30,9 @@ def test_only_real_content_changes_are_reported(dirs, local_content, central_con
     # Adopting or linking an identical file leaves the local bytes alone, so a
     # session holding them is still up to date and does not need telling.
     central, local, backups = dirs
-    (central / "CLAUDE.md").write_text(central_content, encoding="utf-8")
+    write(central / "CLAUDE.md", central_content)
     if local_content is not None:
-        (local / "CLAUDE.md").write_text(local_content, encoding="utf-8")
+        write(local / "CLAUDE.md", local_content)
     changes = discover.Changes()
 
     discover.sync_directory(local, central, backups, changes)
@@ -50,7 +50,7 @@ def dangling_link(local):
 @needs_symlinks
 def test_a_link_pointing_elsewhere_is_repointed(dirs):
     central, local, backups = dirs
-    (central / "CLAUDE.md").write_text("central rules\n", encoding="utf-8")
+    write(central / "CLAUDE.md", "central rules\n")
     dangling_link(local)
     changes = discover.Changes()
 
@@ -67,7 +67,7 @@ def test_a_link_pointing_elsewhere_is_repointed(dirs):
 def test_a_link_that_cannot_be_repointed_is_left_alone(dirs, monkeypatch):
     monkeypatch.setattr(discover, "new_central_link", lambda target, central_file: False)
     central, local, backups = dirs
-    (central / "CLAUDE.md").write_text("central rules\n", encoding="utf-8")
+    write(central / "CLAUDE.md", "central rules\n")
     link = dangling_link(local)
     changes = discover.Changes()
 
@@ -82,8 +82,8 @@ def test_a_link_that_cannot_be_repointed_is_left_alone(dirs, monkeypatch):
 
 def test_a_conflict_backup_lands_under_the_backups_dir(dirs):
     central, local, backups = dirs
-    (central / "CLAUDE.md").write_text("theirs\n", encoding="utf-8")
-    (local / "CLAUDE.md").write_text("mine\n", encoding="utf-8")
+    write(central / "CLAUDE.md", "theirs\n")
+    write(local / "CLAUDE.md", "mine\n")
 
     discover.sync_directory(local, central, backups, discover.Changes())
 
@@ -97,10 +97,8 @@ def test_a_conflict_backup_lands_under_the_backups_dir(dirs):
 def test_a_nested_conflict_keeps_its_relative_path(dirs):
     # The relative path is what tells the two backups of a same-named file apart.
     central, local, backups = dirs
-    for root in (central, local):
-        (root / "skills" / "review").mkdir(parents=True)
-    (central / "skills" / "review" / "SKILL.md").write_text("theirs\n", encoding="utf-8")
-    (local / "skills" / "review" / "SKILL.md").write_text("mine\n", encoding="utf-8")
+    write(central / "skills" / "review" / "SKILL.md", "theirs\n")
+    write(local / "skills" / "review" / "SKILL.md", "mine\n")
 
     discover.sync_directory(local, central, backups, discover.Changes())
 
@@ -114,8 +112,8 @@ def test_a_backup_that_cannot_be_moved_stays_beside_the_file(dirs, monkeypatch):
 
     monkeypatch.setattr(discover.shutil, "move", boom)
     central, local, backups = dirs
-    (central / "CLAUDE.md").write_text("theirs\n", encoding="utf-8")
-    (local / "CLAUDE.md").write_text("mine\n", encoding="utf-8")
+    write(central / "CLAUDE.md", "theirs\n")
+    write(local / "CLAUDE.md", "mine\n")
 
     discover.sync_directory(local, central, backups, discover.Changes())
 

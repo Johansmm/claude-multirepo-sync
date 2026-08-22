@@ -1,17 +1,15 @@
 import shutil
 
 import pytest
-from conftest import needs_symlinks
+from helpers import needs_symlinks, write
 
 from claude_multirepo_sync import discover, unlink
 
 
 @pytest.fixture
-def repo(tmp_path):
-    path = tmp_path / "config-repo"
-    (path / ".claude").mkdir(parents=True)
-    (path / ".claude" / "CLAUDE.md").write_text("central rules\n", encoding="utf-8")
-    return path
+def repo(config_repo):
+    write(config_repo / ".claude" / "CLAUDE.md", "central rules\n")
+    return config_repo
 
 
 def a_real_file(path, repo):

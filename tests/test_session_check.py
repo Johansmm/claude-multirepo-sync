@@ -1,21 +1,17 @@
 import pytest
+from helpers import write
 
 from claude_multirepo_sync import config, session_check
 
 
 @pytest.fixture
-def repo(tmp_path):
-    path = tmp_path / "config-repo"
-    (path / ".git").mkdir(parents=True)
-    config.write_repo(path)
-    return path.resolve()
+def repo(config_repo):
+    config.write_repo(config_repo)
+    return config_repo
 
 
 def make_backup(rel):
-    path = config.BACKUPS_DIR / rel
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("mine\n", encoding="utf-8")
-    return path
+    return write(config.BACKUPS_DIR / rel, "mine\n")
 
 
 def test_stays_silent_with_nothing_unresolved():

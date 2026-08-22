@@ -1,6 +1,3 @@
-import tempfile
-from pathlib import Path
-
 import pytest
 
 from claude_multirepo_sync import config
@@ -27,16 +24,11 @@ def claude_home(tmp_path, monkeypatch):
     return home
 
 
-def symlinks_available():
-    with tempfile.TemporaryDirectory() as tmp:
-        try:
-            Path(tmp, "link").symlink_to(Path(tmp, "target"))
-        except OSError:
-            return False
-    return True
-
-
-# Shared so a test can say what it needs instead of repeating the reason.
-needs_symlinks = pytest.mark.skipif(
-    not symlinks_available(), reason="creating a symlink needs a Windows privilege"
-)
+@pytest.fixture
+def config_repo(tmp_path):
+    """A directory that satisfies config.is_repo(), for anything that only needs
+    the repo to exist.
+    """
+    path = tmp_path / "config-repo"
+    (path / ".git").mkdir(parents=True)
+    return path.resolve()
