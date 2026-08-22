@@ -15,8 +15,8 @@ versioned file directly.
 - `git-sync` keeps the config repo itself up to date (commit/pull/push).
 - `session-sync` is what the hooks actually run: it takes a lock, does the `git-sync` then the
   `discover`, and reports once at the end.
-- `check` surfaces anything left unresolved (a git conflict, a file that couldn't be linked, a
-  conflict backup you haven't merged yet, or an unexpected error). Run it by hand whenever you
+- `check` surfaces anything left unresolved (a sync that didn't finish, a file that couldn't be
+  linked, a conflict backup you haven't merged yet, or an unexpected error). Run it by hand whenever you
   want the current state; `session-sync` reports the same thing on its own.
 
 ## The config repo
@@ -149,7 +149,7 @@ Everything this tool writes on a machine lives under one directory, and none of 
 ~/.claude/
 ├── multirepo-sync.repo          # where the config repo is, on this machine
 └── multirepo-sync/
-    ├── conflict                 # a git conflict in the config repo
+    ├── sync                     # why the last git-sync did not finish
     ├── pending                  # links that couldn't be created
     ├── error.<command>          # one per command that crashed
     ├── lock                     # session-sync's lock
@@ -157,6 +157,26 @@ Everything this tool writes on a machine lives under one directory, and none of 
 ```
 
 The pointer sits outside the directory because it is what says where everything else lives.
+
+### How a failed sync is reported
+
+`git-sync` never reads what git said in order to decide what went wrong. It reports **which step
+stopped** - staging, commit, pull, push - and **what state the repo was left in**, then hands git's
+own output over untouched as evidence.
+
+The reason is that the steps are this tool's and there is a handful of them, while git's wording
+is unbounded, gets translated by the machine's locale, and its exit codes do not tell a timed-out
+connection apart from a merge conflict. A tool that guesses will eventually guess wrong, and a
+wrong diagnosis is worse than none: it sends you to fix something that isn't broken.
+
+Two questions are asked, both by running a command that answers them rather than by reading prose:
+
+- `git ls-remote origin`, before pulling, answers whether the remote is reachable at all. With that
+  settled up front, no later failure can be the network.
+- `git rev-parse MERGE_HEAD` answers whether a merge is half-finished. That is the only state git
+  cannot get itself out of, so it is the only one that asks for your hands.
+
+Everything else says which step stopped and leaves the reading to you.
 
 ### Conflict backups
 

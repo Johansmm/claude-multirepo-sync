@@ -11,7 +11,7 @@ from claude_multirepo_sync.errors import SyncError
 DESCRIPTIONS = {
     "discover": "Mirror .claude/ and opted-in projects/ onto this machine.",
     "git-sync": "Sync the config repo itself (pull/commit/push).",
-    "check": "Show any unresolved conflicts or pending items.",
+    "check": "Show anything left unresolved: a stalled sync, pending links, backups.",
     "session-sync": "Sync the repo and mirror it onto this machine, then report once.",
     "set-repo": "Record where the config repo lives on this machine.",
 }
@@ -73,7 +73,8 @@ def run(args):
         set_repo(args.path)
         return ""
     if args.command == "check":
-        # The only command that needs no repo - it just reads the markers.
+        # The only command that runs without a working repo: it reads what the
+        # others left behind, and the repo pointer only to name paths.
         session_check.main()
         return ""
 
