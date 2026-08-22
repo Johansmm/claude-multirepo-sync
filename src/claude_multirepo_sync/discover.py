@@ -56,6 +56,42 @@ def find_git_dirs(root, max_depth):
             yield Path(dirpath)
 
 
+def project_slug(proj_dir):
+    """The slug for a project on disk, or "" when it has no origin to derive one from."""
+    result = subprocess.run(
+        ["git", "-C", str(proj_dir), "config", "--get", "remote.origin.url"],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
+    remote = result.stdout.strip()
+    return get_slug(remote) if remote else ""
+
+
+def opted_in_projects(repo, search_roots):
+    """Yield (project dir, slug) for each project the config repo has a folder for.
+
+    Nothing syncs just because a git repo exists on disk: the folder in the
+    repo is the opt-in, and the slug is what matches the two.
+    """
+    projects_central = repo / "projects"
+    if not projects_central.is_dir():
+        return
+    central_slugs = {p.name for p in projects_central.iterdir() if p.is_dir()}
+    if not central_slugs:
+        return
+
+    for root in search_roots:
+        if not root.is_dir():
+            continue
+        for proj_dir in find_git_dirs(root, MAX_DEPTH):
+            slug = project_slug(proj_dir)
+            if slug in central_slugs:
+                yield proj_dir, slug
+
+
 def remove_orphan_links(local_root, central_dir, changes):
     if not local_root.is_dir():
         return
@@ -229,31 +265,9 @@ def main(repo, extra_search_roots=None):
     global_central = repo / ".claude"
     sync_directory(config.CLAUDE_HOME, global_central, config.BACKUPS_DIR / ".claude", changes)
 
-    projects_central = repo / "projects"
-    if projects_central.is_dir():
-        central_slugs = {p.name for p in projects_central.iterdir() if p.is_dir()}
-        if central_slugs:
-            for root in search_roots:
-                if not root.is_dir():
-                    continue
-                for proj_dir in find_git_dirs(root, MAX_DEPTH):
-                    result = subprocess.run(
-                        ["git", "-C", str(proj_dir), "config", "--get", "remote.origin.url"],
-                        capture_output=True,
-                        text=True,
-                        encoding="utf-8",
-                        errors="replace",
-                        check=False,
-                    )
-                    remote = result.stdout.strip()
-                    if not remote:
-                        continue
-                    slug = get_slug(remote)
-                    if slug not in central_slugs:
-                        continue
-                    sync_directory(
-                        proj_dir, projects_central / slug, config.BACKUPS_DIR / slug, changes
-                    )
+    for proj_dir, slug in opted_in_projects(repo, search_roots):
+        central = repo / "projects" / slug
+        sync_directory(proj_dir, central, config.BACKUPS_DIR / slug, changes)
 
     reports = (
         (
