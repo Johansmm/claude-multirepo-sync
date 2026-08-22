@@ -9,6 +9,7 @@ from claude_multirepo_sync import (
     config,
     discover,
     git_sync,
+    link,
     session_check,
     session_sync,
     unlink,
@@ -21,6 +22,7 @@ DESCRIPTIONS = {
     "check": "Show anything left unresolved: a stalled sync, pending links, backups.",
     "session-sync": "Sync the repo and mirror it onto this machine, then report once.",
     "set-repo": "Record where the config repo lives on this machine.",
+    "link": "Put local files into the config repo and link them from now on.",
     "unlink": "Replace links with real files, so the config repo can be moved.",
 }
 
@@ -46,6 +48,10 @@ def build_parser():
             dest="search_roots",
             help="Root to scan for git repos (repeatable). Defaults to $HOME.",
         )
+    linker = subparsers.add_parser(
+        "link", help=DESCRIPTIONS["link"], description=DESCRIPTIONS["link"]
+    )
+    linker.add_argument("paths", nargs="+", type=Path, help="The files to start syncing.")
     scanners["unlink"].add_argument(
         "paths",
         nargs="*",
@@ -98,6 +104,8 @@ def run(args):
         discover.main(repo, extra_search_roots=args.search_roots)
     elif args.command == "git-sync":
         git_sync.main(repo)
+    elif args.command == "link":
+        link.main(repo, args.paths)
     elif args.command == "unlink":
         unlink.main(repo, args.paths, extra_search_roots=args.search_roots)
     elif args.command == "session-sync":
