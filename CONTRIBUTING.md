@@ -117,7 +117,8 @@ Fill in the [template](.github/pull_request_template.md); it is short. What it a
 - The tests pass, and behaviour changes come with a test that fails without the change.
 - The README says what the tool now does, if that changed. Nothing in the README describes internals
   for their own sake, so a refactor usually needs no doc change and a new flag always does.
-- A `CHANGELOG.md` entry under `Unreleased`, for anything a user would notice.
+- A `CHANGELOG.md` entry under `Unreleased`, when the change adds a feature or fixes a bug in the
+  package. CI, tooling and doc-only or typo changes don't need one.
 
 Review is about the contract more than the code: whether the new behaviour still holds when the
 network is down, when the repo has moved, when two sessions run at once, and when the machine
