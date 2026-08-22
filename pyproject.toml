@@ -2,6 +2,8 @@
 name = "claude-multirepo-sync"
 version = "0.1.0"
 description = "Sync Claude Code configuration from a git repo you own"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.10"
 dependencies = ["filelock>=3.12"]
 
