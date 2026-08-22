@@ -51,16 +51,16 @@ def test_stays_silent_when_everything_is_clean(repo, monkeypatch):
 def test_discover_still_runs_when_the_sync_fails(repo, monkeypatch):
     # The reason failures propagate instead of exiting: an exit here would have
     # killed the process before discover ever ran.
-    marker = config.CONFLICT_MARKER
+    marker = config.SYNC_MARKER
     ran = steps_that_record(
-        monkeypatch, git_sync_fails_with=SyncError("CONFLICT in git pull", marker=marker)
+        monkeypatch, git_sync_fails_with=SyncError("The pull step failed", marker=marker)
     )
 
     report = session_sync.main(repo)
 
     assert ran == ["discover"]
-    assert marker.read_text(encoding="utf-8").strip() == "CONFLICT in git pull"
-    assert "unresolved git conflict" in report
+    assert marker.read_text(encoding="utf-8").strip() == "The pull step failed"
+    assert "did not finish" in report
 
 
 def test_files_changed_by_the_mirror_are_reported(repo, monkeypatch):

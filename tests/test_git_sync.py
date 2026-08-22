@@ -101,7 +101,7 @@ def test_commit_refuses_a_half_merged_tree(repo, tmp_path):
 
     with pytest.raises(SyncError) as excinfo:
         git_sync.commit_local(repo)
-    assert excinfo.value.marker == config.CONFLICT_MARKER
+    assert excinfo.value.marker == config.SYNC_MARKER
     assert "<<<<<<<" not in run_git(repo, "show", "HEAD:.claude/CLAUDE.md").stdout
 
 
@@ -112,7 +112,7 @@ def test_sync_reconciles_without_a_pull_strategy_configured(repo, tmp_path):
 
     git_sync.main(repo)
 
-    assert not config.CONFLICT_MARKER.exists()
+    assert not config.SYNC_MARKER.exists()
     assert (repo / ".claude" / "from-elsewhere.md").exists()
     pushed = run_git(repo, "show", "--name-only", "--format=", "origin/main~1").stdout
     assert ".claude/CLAUDE.md" in pushed
@@ -145,5 +145,29 @@ def test_first_push_is_not_treated_as_a_conflict(repo, tmp_path):
 
     git_sync.main(repo)
 
-    assert not config.CONFLICT_MARKER.exists()
+    assert not config.SYNC_MARKER.exists()
     assert run_git(repo, "ls-remote", str(empty), "main").stdout.strip()
+
+
+def test_an_unreachable_remote_is_not_called_a_conflict(repo, tmp_path):
+    # The failure that started all this: a transport problem reported as a merge.
+    run_git(repo, "remote", "set-url", "origin", str(tmp_path / "gone.git"))
+
+    with pytest.raises(SyncError) as excinfo:
+        git_sync.main(repo)
+
+    message = str(excinfo.value)
+    assert "stopped at: connect" in message
+    assert "merge" not in message.lower()
+    assert not git_sync.merge_in_progress(repo)
+
+
+def test_a_real_merge_conflict_is_reported_as_one(repo, tmp_path):
+    diverge_remote(tmp_path, ".claude/CLAUDE.md", "their version\n")
+    write(repo / ".claude" / "CLAUDE.md", "our version\n")
+
+    with pytest.raises(SyncError) as excinfo:
+        git_sync.main(repo)
+
+    assert "stopped at: merge" in str(excinfo.value)
+    assert git_sync.merge_in_progress(repo)

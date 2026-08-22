@@ -1,5 +1,5 @@
-"""Surfaces any unresolved markers, so they show up regardless
-of which machine you're on.
+"""Surfaces whatever is still unresolved - markers and conflict backups -
+so it shows up regardless of which machine you're on.
 """
 
 from pathlib import Path
@@ -84,12 +84,12 @@ def report():
     """
     sections = [
         show(
-            config.CONFLICT_MARKER,
-            "WARNING: the config repo has an unresolved git conflict",
+            config.SYNC_MARKER,
+            "WARNING: the last config sync did not finish",
             [
-                "It happened in a previous session or machine and was never resolved.",
-                "Until it's resolved (cd into the config repo and run git status),",
-                "the global CLAUDE.md and this machine's rules may be out of date.",
+                "Until one does, the global CLAUDE.md and this machine's rules may be",
+                "out of date. Which step stopped, and whether it needs you, is below,",
+                "along with what git said about it.",
             ],
         ),
         show(
