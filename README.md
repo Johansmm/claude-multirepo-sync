@@ -10,8 +10,10 @@ versioned file directly.
 - `set-repo` records where the config repo lives on this machine. Run once per machine, at setup
   - nothing else works until it has.
 - `discover` creates and repairs the links, file by file, without overwriting local content it
-  hasn't checked against the central copy first (new file, adopt, identical, or real conflict are
-  each handled differently).
+  hasn't checked against the central copy first (a new file, an identical one and a real conflict
+  are each handled differently).
+- `link` puts local files into the config repo and links them from then on. The only way a file
+  joins.
 - `git-sync` keeps the config repo itself up to date (commit/pull/push).
 - `session-sync` is what the hooks actually run: it takes a lock, does the `git-sync` then the
   `discover`, and reports once at the end.
@@ -108,33 +110,33 @@ directory. Pass `--search-root PATH` to scan somewhere else instead - repeat the
 than one root. Either way the scan stops 4 levels below each root, so a project nested deeper
 than that is never found.
 
-## Filling the config repo
+## Adding files to the config repo
 
-There is nothing to declare anywhere: a file's path in the repo is what decides where it lands.
+`link` is how a file joins. Point it at a file you already have and it moves the content into the
+repo, at the path that maps back onto where the file lives, then replaces the file with a link to
+it:
 
-### Global files, onto `~/.claude/`
+```
+claude-mr-sync link ~/.claude/CLAUDE.md
+claude-mr-sync link /path/to/project/CLAUDE.local.md .claude/settings.local.json
+```
 
-Put them under `.claude/`, at the same relative path they should have at the destination.
-`.claude/CLAUDE.md` becomes `~/.claude/CLAUDE.md`; `.claude/skills/review/SKILL.md` becomes
-`~/.claude/skills/review/SKILL.md`. Commit, push, and `discover` links them on every machine.
+Nothing is declared anywhere - the destination is derived from where the file already is:
 
-### One project's files, onto its root
+- Under `~/.claude/` it lands in `.claude/`, same relative path. `~/.claude/skills/review/SKILL.md`
+  becomes `.claude/skills/review/SKILL.md`.
+- Inside a git project it lands in `projects/<slug>/`, relative to the project root, where
+  `<slug>` comes from that project's `origin` URL - `git@github.com:acme/widget.git` becomes
+  `github.com_acme_widget`. Missing directories are created, so a project that has never synced
+  anything needs no setup.
+- Anywhere else it is refused: there is no destination to derive.
 
-1. Get the project's remote URL: `git -C /path/to/project config --get remote.origin.url`
+Then commit and push the config repo (or let the `SessionEnd` hook do it). Every other machine
+picks the file up on its next `discover` - identical content is linked in place, and content that
+differs is a conflict, backed up and reported.
 
-2. Turn that into a `<slug>`: drop the protocol (`https://`) or user (`git@`) prefix and the
-   trailing `.git`, then replace every `:`, `/` or `\` with `_`.
-
-   Example: `git@github.com:acme/widget.git` becomes `github.com_acme_widget`. This is exactly
-   what `get_slug()` in `discover.py` computes, so it is guaranteed to match what `discover`
-   looks for.
-
-3. Create `projects/<slug>/` in the config repo and add whatever should sync onto that project's
-   root (`CLAUDE.local.md`, `.claude/settings.local.json`, ...) - same file-by-file rules as
-   `.claude/`.
-
-4. Commit and push. `discover` picks it up next time it runs, on any machine where that project
-   exists locally with the same remote.
+`link` never overwrites. If the repo already holds that path with different content, it says so
+and leaves both sides alone; if the file is already a link, it leaves it alone too.
 
 ### What not to put there
 
